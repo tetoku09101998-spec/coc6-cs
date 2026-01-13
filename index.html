@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>クトゥルフ神話TRPG 6版 キャラクターシート (Ver 6.6)</title>
+    <title>クトゥルフ神話TRPG 6版 キャラクターシート (Ver 6.7)</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script> 
     <style>
         /* ==================== 基本スタイル ==================== */
@@ -51,16 +51,16 @@
         .stats-grid-unified { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
         .stats-grid-unified label { 
             display: flex; 
-            justify-content: flex-end; /* 🌟 ここを変更: 右寄せにして間隔を詰める 🌟 */
+            justify-content: flex-end; 
             align-items: center;
-            gap: 8px; /* 文字と枠の間のスペース */
+            gap: 8px; 
             white-space: nowrap; 
             font-size: 1em; 
             margin-bottom: 2px; 
         }
         .stats-grid-unified input { width: 55px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 1.1em; }
 
-        /* 派生ステータス (Ver 6.2仕様) */
+        /* 派生ステータス */
         #derived-stats-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
         .derived-item span { font-size: 1em; display: block; margin-bottom: 2px; }
         .derived-item input { width: 100%; font-size: 1.2em; padding: 3px; box-sizing: border-box; text-align: center; }
@@ -96,7 +96,10 @@
         .clear-btn { background-color: #dc3545; }
         .csv-btn { background-color: #17a2b8; }
         .coco-btn { background-color: #0056b3; }
-        .ia-btn { background-color: #6f42c1; }
+        
+        /* リンクボタン用 */
+        .link-btn-wrapper { text-decoration: none; }
+        .kp-btn { background-color: #5c6bc0; color: white; }
 
         /* ==================== 印刷用CSS ==================== */
         @media print {
@@ -133,7 +136,10 @@
 <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="importCSV(this)">
 
 <div class="utility-buttons">
-    <button class="ia-btn" onclick="importIachara()">いあきゃら読込</button>
+    <a href="coc-manager.html" target="_blank" class="link-btn-wrapper">
+        <button class="kp-btn">KPツールへ</button>
+    </a>
+    
     <button class="roll-btn" onclick="rollStats()">ステータス振</button>
     <button class="roll-btn" onclick="calculateDerivedStats()">計算</button>
     <button class="coco-btn" onclick="copyCocoData()">ココフォリア駒コピー</button>
@@ -378,62 +384,6 @@
         navigator.clipboard.writeText(JSON.stringify(data)).then(() => {
             alert("ココフォリア用の駒データをコピーしました！");
         });
-    }
-
-    function importIachara() {
-        const jsonStr = prompt("いあきゃらで「ココフォリア駒出力」したJSONデータを\nここに貼り付けてください：");
-        if (!jsonStr) return;
-        try {
-            const raw = JSON.parse(jsonStr);
-            const d = raw.data;
-            if(!d) throw new Error("Format Error");
-            document.getElementById('char-name').value = d.name || "";
-            if(d.params) d.params.forEach(p => { 
-                const el = document.getElementById(p.label.toLowerCase()); 
-                if(el) el.value = p.value; 
-            });
-            if(d.status) d.status.forEach(s => {
-                if(s.label==="HP") { document.getElementById('hp-max').value=s.max; document.getElementById('totsu').value=s.value; }
-                if(s.label==="MP") document.getElementById('mp').value=s.value;
-                if(s.label==="SAN") document.getElementById('san').value=s.value;
-            });
-            if(d.commands) {
-                Object.keys(skills).forEach(k => {
-                   document.getElementById(`s-${k}-job`).value=0; 
-                   document.getElementById(`s-${k}-hobby`).value=0;
-                   document.getElementById(`s-${k}-growth`).value=0;
-                   const sub = document.getElementById(`s-${k}-sub`);
-                   if(sub) sub.value = "";
-                });
-                const lines = d.commands.split('\n');
-                lines.forEach(line => {
-                    const match = line.match(/<=(\d+).*?【(.*?)】/);
-                    if(match) {
-                        const val = parseInt(match[1]);
-                        let fullName = match[2];
-                        let name = fullName.replace(/（.*?）/g, ''); 
-                        const subMatch = fullName.match(/（(.*?)）/);
-                        let subValue = subMatch ? subMatch[1] : "";
-                        if(skills[name]) {
-                            let init = skills[name].initial;
-                            const edu=parseInt(document.getElementById('edu').value)||0;
-                            const dex=parseInt(document.getElementById('dex').value)||0;
-                            if(name==='母国語') init=edu*5;
-                            if(name==='回避') init=dex*2;
-                            const growth = Math.max(0, val - init);
-                            document.getElementById(`s-${name}-growth`).value = growth;
-                            const subEl = document.getElementById(`s-${name}-sub`);
-                            if(subEl && subValue) subEl.value = subValue;
-                        }
-                    }
-                });
-            }
-            saveData();
-            alert("読み込み完了！");
-        } catch(e) {
-            console.error(e);
-            alert("読み込み失敗。正しいデータを貼り付けてください。");
-        }
     }
 
     function exportCSV() {
